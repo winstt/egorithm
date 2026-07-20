@@ -4,4 +4,3 @@ dist/
 *.local
 .env
 egorithm.env
-data/r2-manifest.json
