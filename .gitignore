@@ -3,4 +3,5 @@ dist/
 .DS_Store
 *.local
 .env
+egorithm.env
 data/r2-manifest.json

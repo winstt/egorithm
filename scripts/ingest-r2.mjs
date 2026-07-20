@@ -1,9 +1,9 @@
 // One-shot backfill: mirror the full Instagram archive into Cloudflare R2.
 // Resumable — lists what's already in the bucket and skips it.
 //
-// Run:  node --env-file=.env scripts/ingest-r2.mjs
+// Run:  npm run ingest:r2   (reads egorithm.env)
 //
-// Required env (.env):
+// Required env (egorithm.env):
 //   IG_BUSINESS_ID, IG_PAGE_TOKEN            — Instagram Graph API (Facebook Login)
 //   R2_ACCOUNT_ID                            — Cloudflare account id
 //   R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY   — R2 API token (Object Read & Write)
