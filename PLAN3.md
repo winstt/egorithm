@@ -1,5 +1,8 @@
 # EGORITHM — Plan 3 (philosophy → implementation)
 
+> **Superseded by `PLAN4.md`** (the consolidated build-from plan). Kept for the
+> philosophy-to-implementation reasoning; build against PLAN4.
+
 PLAN3 layers on top of **PLAN2.md**. It is *not* a replacement: PLAN2's data
 model, connectors, node editor, and speed budget all still hold — **except where
 PLAN3 overrides them.** This document captures everything `PHILOSOPHY.md` (v3)

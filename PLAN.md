@@ -2,10 +2,13 @@
 
 **One-line:** A plain, infinite visual moodboard on GitHub Pages, two-way linked to an Instagram account — the site mirrors the IG feed, and pictures added through the site get published to IG (single image, no caption).
 
-**This file = v1 (the live site's baseline).** Project precedence: `PLAN.md`
-(v1, live) → `PLAN2.md` (v2 vision) → `PLAN3.md` (philosophy-driven overrides).
-**Where they conflict, the later doc wins** — `PLAN3.md` is the current authority
-for v2. Visual styling is currently **deferred** (owner, 2026-07-20 — see §3.3).
+> **Superseded by `PLAN4.md`** — the consolidated build-from plan. This file is
+> kept as the v1 / live-site baseline and historical record.
+
+**This file = v1 (the live site's baseline).** History: `PLAN.md` (v1, live) →
+`PLAN2.md` (v2 vision) → `PLAN3.md` (philosophy overrides) → **`PLAN4.md`
+(consolidated — build from this)**. Visual styling is **deferred** (owner,
+2026-07-20 — see §3.3).
 
 ---
 

@@ -1,5 +1,8 @@
 # EGORITHM — Plan 2 (vision & roadmap)
 
+> **Superseded by `PLAN4.md`** (the consolidated build-from plan). Kept for the
+> vision/rationale behind v2; build against PLAN4.
+
 Successor to `PLAN.md` (v1 = "mirror my IG feed on an infinite board", now LIVE
 at winstt.github.io/egorithm). This document is the source of truth for **v2**:
 multi-source, node-connected, composable moodboard. Brand voice lives in
