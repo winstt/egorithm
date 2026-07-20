@@ -5,6 +5,12 @@ at winstt.github.io/egorithm). This document is the source of truth for **v2**:
 multi-source, node-connected, composable moodboard. Brand voice lives in
 `PHILOSOPHY.md`.
 
+> **Precedence:** `PLAN3.md` supersedes this document wherever they conflict —
+> specifically the **business model** (§9 → pay-per-use, not subscription),
+> **AI-create input** (§6a → now *both* selection + board-deepen), **milestones**
+> (§8 → PLAN3 §4), and the **glass aesthetic** (deferred; PLAN3 §1.1). Read PLAN2
+> for the vision, PLAN3 for the current authority.
+
 ---
 
 ## 0. What changes from v1
@@ -120,6 +126,10 @@ Sources: [Are.na channels API](https://dev.are.na/documentation/channels),
 
 ## 4. Grid & animation upgrades (near-term, mostly frontend)
 
+> The **"glass" references** in this section are v1-era. The control's *visual
+> style is deferred* (PLAN3 §1.1 / PLAN.md §3.3) — the **functionality** below
+> (scramble, background switch) stands; the skin is open, decided later.
+
 Concrete asks from the author, in priority order:
 
 1. **Scramble** — rename v1 "Shuffle" → **Scramble**, with a two-arrows (⇄/🔀)
@@ -182,6 +192,9 @@ the "device for vertical thinking"); **Search** is the utility.
 
 ### 6a. AI create (headline paid feature)
 
+> **Updated by PLAN3 §2.1:** the input model is now **both** — selected images as
+> references **and** a board-level "deepen" that feeds the whole composition.
+
 The flow: **select a few images on the big wall → they're sampled as visual
 references → write a prompt → generate a new image right onto the wall.** The
 moodboard's own contents become the material for creating more.
@@ -198,9 +211,10 @@ moodboard's own contents become the material for creating more.
   prompt bar appears, choose engine + aspect, generate. Result lands as a new
   Block in an "AI / generated" source so it's part of the graph like anything
   else.
-- **Cost control:** generation is metered → this is the natural **paid** feature
-  (per-image cost is real). Free tier: none or a tiny trial; paid: generation +
-  higher limits.
+- **Cost control:** generation is metered → the natural **paid** action.
+  *(Superseded by PLAN3 §1.2: **everything except AI generation is free, always** —
+  no subscription, no "higher limits"; only generation is metered, settled once
+  at end of day.)*
 
 Sources: [Gemini 2.5 Flash Image (Nano Banana) API](https://ai.google.dev/gemini-api/docs/models/gemini-2.5-flash-image),
 [Nano Banana image generation](https://ai.google.dev/gemini-api/docs/image-generation),
@@ -229,6 +243,11 @@ Apple-Photos-style: **find exactly the image you mean** across the whole wall.
 
 ## 8. Milestones
 
+> **Superseded by PLAN3 §4**, which adds accounts/auth + private-by-default at
+> v2.2, board lineage at v2.3, pay-per-use billing at v2.4, and sharing/multiverse
+> at v2.6 — and splits v2.0 into a functional pass (ships now) and a deferred
+> visual pass. Use PLAN3 §4 as the live milestone list.
+
 - **v2.0 — Motion, Scramble & backgrounds** *(frontend only, ships on current stack)*
   Rename Scramble + arrows icon, expand-animation polish, zoom-on-move parallax,
   background/theme switcher (§4 palette), reduced-motion. No backend change.
@@ -253,6 +272,12 @@ Gemini API — no vector DB — so it ships before AI search. It's the biggest d
 so it's front-loaded once the node editor exists.
 
 ## 9. Business model (ideas — no ads, ever)
+
+> **Superseded by PLAN3 §1.2.** The decided model is **pay-per-use**: a free
+> credit pool, then a few cents per generation only, with an **invisible meter
+> that settles once at end of day** — *not* a monthly subscription. Composing /
+> collecting / connecting / wiring is **free, always**. The options below are
+> kept only as background reasoning.
 
 Monetization must fit the philosophy (§ `PHILOSOPHY.md`): no ads, no attention
 economy. Values-aligned options, best first:

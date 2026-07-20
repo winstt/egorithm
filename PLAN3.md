@@ -14,19 +14,27 @@ wins.** `PHILOSOPHY.md` is the brand source of truth.
 
 ## 0. Locked decisions (2026-07-20)
 
-1. **UI aesthetic = near-invisible / text-only.** No panels, no glass, no cards
-   anywhere. Controls are floating lowercase text; the image is the only surface.
-   Replaces liquid glass across the whole app.
+1. **UI aesthetic — direction only, DEFERRED (owner, 2026-07-20).** Moving *away*
+   from liquid glass; current leaning is **near-invisible / text-only** (floating
+   lowercase text, the image as the only surface). All visual styling is
+   **deferred to a later pass** — a direction, not a locked spec, and it **blocks
+   nothing** downstream. (§1.1 keeps the detailed spec for when we return to it.)
 2. **AI-create input = both.** Selected images act as references *and* a
-   board-level "deepen" uses the whole composition as context.
+   board-level "deepen" uses the whole composition as context. **(Locked.)**
 
 ---
 
 ## 1. CHANGES — override PLAN2 / the current live build
 
-### 1.1 Rip out liquid glass → near-invisible / text-only UI  *(biggest change; touches the LIVE site)*
+### 1.1 Rip out liquid glass → near-invisible / text-only UI  *(DEFERRED visual pass)*
 
-**Current build (to remove):** `styles.css` `.glass` (backdrop-filter blur +
+> **DEFERRED (owner, 2026-07-20).** Do this in a dedicated visual pass **later**,
+> not now. The spec below is the current *direction*; the owner wants to finalize
+> visuals afterwards, and nothing downstream depends on it. The functional v2.0
+> work (scramble rename, lowercase copy, zoom-on-move, background switching) does
+> **not** need this and ships first.
+
+**Current build (to remove, when the visual pass happens):** `styles.css` `.glass` (backdrop-filter blur +
 saturate, translucent fill, inner light border, soft shadow), `.tok` dialog
 (same treatment), lightbox `.lb-bg` (blur backdrop), the round `#orb`, the
 `.menu-items` pill.
@@ -166,11 +174,13 @@ says *"glass"* read *near-invisible UI*; wherever it says *"subscription"* read
 
 ## 4. Revised milestones (PLAN3 folded into PLAN2's)
 
-- **v2.0 — Motion, Scramble, backgrounds + DE-GLASS.** Strip liquid glass now;
-  ship the near-invisible / text-only UI + lowercase copy; scramble (rename of
-  shuffle) with arrows mark; zoom-on-move; reduced-motion. *Frontend-only, ships
-  on the current stack, touches the live site.* (Gated on the typeface +
-  legibility decisions — Open Questions.)
+- **v2.0 — Motion & Scramble** *(functional; ships now, frontend-only, no visual
+  redesign)*: rename shuffle → **scramble** (+ arrows mark), lowercase UI copy,
+  zoom-on-move parallax, background-palette switching (logic), reduced-motion.
+  Keeps the current control skin as-is for now.
+- **v2.0-visual — De-glass / near-invisible pass** *(DEFERRED, owner)*: the
+  aesthetic redesign (remove glass → text-only, typeface, legibility). Do after
+  the functional pass; blocks nothing.
 - **v2.1 — Upload + Are.na connector.** (unchanged)
 - **v2.2 — Data layer + accounts + private-by-default.** Cloudflare R2/D1/Workers,
   **auth**, per-user private sandbox, full ~2k IG archive import.
@@ -186,11 +196,11 @@ says *"glass"* read *near-invisible UI*; wherever it says *"subscription"* read
 
 ## 5. Open questions (with my proposed defaults)
 
-- **Typeface for the text-only UI** — now load-bearing (text *is* the identity).
-  Needs a pick: a distinctive-but-plain lowercase type. *Want to choose one, or
-  should I propose 2–3 candidates?*
-- **Legibility of text over images** — proposed default `mix-blend-mode:
-  difference` for auto-contrast, faint shadow only as fallback. OK?
+- **Typeface for the text-only UI** *(deferred — part of the visual pass)* — once
+  text *is* the identity, the type is load-bearing. Pick a distinctive-but-plain
+  lowercase type when we do visuals.
+- **Legibility of text over images** *(deferred — visual pass)* — proposed
+  default `mix-blend-mode: difference` for auto-contrast, faint shadow fallback.
 - **Multiverse depth** — default: link-based pull-in only, no discovery. Confirm,
   or do you want a browsable (but never-pushed) public layer later?
 - **Free-pool size & per-generation price** — set at launch; cost basis

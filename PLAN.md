@@ -2,7 +2,10 @@
 
 **One-line:** A plain, infinite visual moodboard on GitHub Pages, two-way linked to an Instagram account — the site mirrors the IG feed, and pictures added through the site get published to IG (single image, no caption).
 
-This file is the source of truth. Update it when decisions change.
+**This file = v1 (the live site's baseline).** Project precedence: `PLAN.md`
+(v1, live) → `PLAN2.md` (v2 vision) → `PLAN3.md` (philosophy-driven overrides).
+**Where they conflict, the later doc wins** — `PLAN3.md` is the current authority
+for v2. Visual styling is currently **deferred** (owner, 2026-07-20 — see §3.3).
 
 ---
 
@@ -98,7 +101,13 @@ No servers. Three GitHub features cover everything. The repo must be **public** 
 - Click/tap an image → **FLIP animation**: the image smoothly scales/translates from its field position to centered, fit-to-viewport (~90vmin), rest of the field dims and blurs slightly. *Implementation note: the expanding image must be re-parented (or cloned) into a fixed overlay layer outside the zoomed/panned world `<div>`, with the world transform folded into the FLIP start state — animating inside a scaled parent gives wrong coordinates.*
 - Click anywhere / Esc / pinch-in → same animation back. No metadata shown — just the picture. (Long-press → link to the IG post, hidden convenience.)
 
-### 3.3 The liquid-glass control
+### 3.3 The control (bottom-right menu)
+
+> **Visuals DEFERRED (owner, 2026-07-20).** The liquid-glass treatment below is
+> the *v1 build only*. Per `PHILOSOPHY.md` the look moves **away from glass**
+> (leaning near-invisible / text-only, `PLAN3 §1.1`), but all visual styling is
+> deferred to a later pass — treat the aesthetic as **open, not locked**. The
+> *functionality* (the menu, Add / Scramble) stands regardless of the skin.
 
 - One floating circle, bottom-right — the only UI chrome. Apple liquid-glass look: `backdrop-filter: blur() saturate()`, translucent fill, 1px inner light border, soft shadow, plus an SVG displacement filter for the refractive edge where supported (`@supports` fallback to plain frosted glass).
 - Tap → morphs open (spring-ish CSS transition) into a vertical pill menu:
@@ -113,6 +122,13 @@ No servers. Three GitHub features cover everything. The repo must be **public** 
 ---
 
 ## 4. Milestones
+
+> **Build status (2026-07-20): the site is LIVE at winstt.github.io/egorithm.**
+> **M0–M3 done. M4 built but not yet run end-to-end from the browser** (needs the
+> owner's fine-grained PAT pasted into the menu once). **M5 partial** —
+> failed-queue handling, dark mode, and reduced-motion are all present in code;
+> **README still missing**. The M3 glass bits are superseded per §3.3. The M0
+> "remaining tail" note below is **done** (repo, secrets, and Pages are all up).
 
 **M0 — Instagram plumbing ✅ DONE (2026-07-20)**
 IG account is Professional; Meta app **EGORITHM-IG** created; `y0ungtrailblaze`
