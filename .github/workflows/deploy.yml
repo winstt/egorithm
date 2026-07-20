@@ -10,6 +10,11 @@ on:
       - 'media/**'
       - 'package.json'
       - 'vite.config.ts'
+  # Commits pushed by sync/publish use GITHUB_TOKEN, which does NOT trigger the
+  # push event above (GitHub's loop-prevention). Run deploy after those finish.
+  workflow_run:
+    workflows: ["Sync IG feed", "Publish queue to IG"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
