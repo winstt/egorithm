@@ -19,7 +19,14 @@ pulled into one infinite surface and arranged by rules you set. The name is the
 whole idea: instead of *the* algorithm feeding you, you are the *ego*-rithm.
 
 It is not about finding what others made. It is about **composing your own
-visual world** from the places you already collect.
+visual world** from the places you already collect — and then **making from it**.
+Select a few images, push them through an AI visual engine, and create. The
+board isn't a gallery to look at; it's a **device for thinking vertically** —
+going deeper into an idea, not wider across a feed.
+
+And it is **fast**. The tools people reach for now — Miro, Pinterest, Are.na —
+are slow. EGORITHM's felt quality is speed: open it, connect two things, see the
+wall, make something. Instantly.
 
 ## What it is / is not
 
@@ -43,6 +50,11 @@ visual world** from the places you already collect.
    never competes for your time — it gives you a surface and disappears.
 5. **Plain by conviction.** The restraint is the aesthetic. Whitespace, one
    glass control, smooth motion. Calm software.
+6. **Fast or it doesn't count.** Speed is a feature, the main one. Every
+   interaction is instant; the network catches up in the background.
+7. **Look, then make.** The board is raw material. Selecting images and
+   generating from them turns collecting into creating — a tool for vertical
+   thinking, not just viewing.
 
 ## Voice
 
@@ -57,3 +69,5 @@ Closer to Are.na and Dieter Rams than to a growth-hacked SaaS.
 - *your sources, one surface*
 - *compose, don't consume*
 - *the anti-feed*
+- *look, then make*
+- *think vertically*

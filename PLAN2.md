@@ -18,6 +18,18 @@ single feed into a **graph of sources and boards**.
 
 The shift in one line: **from a feed to an instrument.**
 
+**Positioning — speed is the product.** The go-to tools for this (Miro,
+Pinterest, even Are.na) are *slow*: heavy canvases, laggy loads, friction to
+connect anything. EGORITHM's core promise is **fast, instantly connected** —
+open it, wire two sources, see the wall, generate from a selection, all without
+waiting. Speed is not a nice-to-have; it is the differentiator and a hard design
+constraint (see §10).
+
+**It is a device for vertical thinking, not just an image wall.** More than
+looking at pictures: select a few, push them through an AI visual engine
+(Higgsfield / Google "Nano Banana"), and *create* — the moodboard becomes a
+thinking-and-making surface, not a gallery.
+
 ---
 
 ## 1. Core concepts / data model
@@ -34,29 +46,59 @@ Four objects. Everything else composes from these.
 - **View** — a render of a board: the infinite grid with a seed, layout, and
   animation state. What you actually look at.
 
-## 2. The node graph (signature feature)
+## 2. The node editor (signature feature)
 
-Boards and sources are **nodes on a patch canvas**; edges combine them. This is
-the heart of v2 and the literal expression of the brand ("connection over
-collection").
+Sources and boards are **nodes**; edges combine them, and whatever is wired to
+the **Viewport** node renders on the big wall above. This is the heart of v2 and
+the literal expression of the brand ("connection over collection"). It doubles
+as the way you **browse your uploaded directories** — each directory/source is a
+node you can see, move, and patch.
 
 ```
-  [IG: architecture] ─┐
-                       ├─▶ (union) ─▶ [Board: "concrete + fur"] ─▶ View
-  [Pinterest: cats] ──┤
-                       │
-  [Are.na: one art pin]┘
+   ┌─────────────── the wall (infinite grid, fills the screen) ───────────────┐
+   │   selecting images here → they become samples for an AI prompt (§6)       │
+   └──────────────────────────────────────────────────────────────────────────┘
+   ┌──── node editor (docked at the BOTTOM, pull up to expand) ───── [+ add ▸] ┐
+   │                                                                            │
+   │   [IG: architecture]─┐                                                     │
+   │   [Pinterest: cats]──┼─(union)─▶[PLAN]══▶(( Viewport ))                    │
+   │   [Are.na: art pin]──┘           ▲ double-click = active                   │
+   └────────────────────────────────────────────────────────────────────────── ┘
 ```
 
-- **Node types:** Source nodes (inputs) and Board nodes (combinators/outputs).
-- **Edge operations (v2 set):** `union` (merge), `filter` (by tag/source/ratio),
-  `sample` (take N, seeded), `weight` (bias how often a source appears in the
-  scatter). More later (dedupe, time-window).
-- **Boards menu:** a panel listing every board you've made; open one to render it,
-  or drop into "graph mode" to wire nodes. Renders of nodes are themselves
-  connectable — a composite board can feed another.
-- This is a modular/patching UI in spirit (Blender nodes, Max/MSP, Are.na's own
-  connection model) but kept plain and quiet.
+**Layout.** The node editor is **docked at the bottom** of the screen; the wall
+fills everything above. Pull the editor up to work in it, collapse it to just
+look at the wall.
+
+**Nodes = directories/sources.** Every source you add (an IG account, a
+Pinterest board, an Are.na channel, an upload folder off your computer) shows up
+as a node. The editor *is* your directory browser.
+
+**The PLAN node.** A special combinator node. **Double-click it to make it
+active** — its output becomes what the wall shows. You keep several PLANs and
+flip between them by activating one. (A "PLAN" = a saved composition of wired
+sources; this is the v2 name for what §1 calls a Board.)
+
+**Interaction.**
+- **Desktop:** right-click + drag to move a node; drag from a node's output port
+  to another node's input to connect.
+- **Mobile:** tap a node's port, then tap another node (or the Viewport) to wire
+  them — no precise dragging needed.
+- **Viewport port:** a fixed sink node. Whatever is connected to it renders on
+  the wall. Rewiring the Viewport instantly changes the view.
+
+**+ Add directories.** A **`+`** button in the **top-right of the node editor**
+opens the connectors menu (§3): natively pick a source to pull from (IG /
+Pinterest / Are.na / Upload / local files), and it drops in as a new node. Same
+menu lets you **remove** a directory.
+
+**Edge operations (v2 set):** `union` (merge), `filter` (by tag / source /
+ratio), `sample` (take N, seeded), `weight` (bias how often a source shows up in
+the scatter). More later (dedupe, time-window). PLAN outputs are themselves
+connectable, so a PLAN can feed another PLAN.
+
+Modular/patching in spirit (Blender nodes, Max/MSP, Are.na's connection model)
+but kept plain, quiet, and — above all — **fast**.
 
 ## 3. Connectors (grounded in real API constraints, verified 2026-07)
 
@@ -89,6 +131,20 @@ Concrete asks from the author, in priority order:
    (items slightly scale/opacity-shift by distance from viewport center) so
    movement feels alive, not flat. Respect `prefers-reduced-motion`.
 4. **Ratio-aware scatter** stays; add optional density/whitespace control.
+5. **Background / theme switcher** — a small menu (in the glass control) to set
+   the wall background. Fixed palette:
+
+   | Swatch | Hex |
+   |---|---|
+   | Dark grey | `#404040` |
+   | Ultramarine blue | `#1737e9` |
+   | White | `#ffffff` |
+   | Black | `#000000` |
+   | Light grey | `#e9e9e9` |
+
+   *(Author's note had `#ffffff`/`#000000` labelled swapped — corrected here:
+   `#ffffff` = white, `#000000` = black.)* Selection persists (localStorage);
+   image drop-shadows/menu glass adapt to light vs dark backgrounds.
 
 ## 5. Scaling: the full 2k+ database
 
@@ -119,17 +175,46 @@ default high enough to hold the IG archive.
 
 *Migration is staged (see §8) — v1 keeps running until v2's data layer is ready.*
 
-## 6. AI analysis (future / explicitly later)
+## 6. AI — create & search (paid tier)
 
-Apple-Photos-style: scan the whole wall, **find exactly the image you mean** by
-description or by visual similarity.
+Two capabilities. **Create** is the headline (turns EGORITHM into a making tool,
+the "device for vertical thinking"); **Search** is the utility.
 
-- On ingest, compute an **image embedding** (CLIP-class) per Block; store in the
-  DB (vector column / vector index).
-- Search box: text → embedding → nearest blocks; or "more like this" from any
-  image. Optional auto-tags (objects, color, mood) for the `filter` edge op.
-- Runs server-side on ingest, cheap at this scale. **Deferred** until connectors
-  + graph are solid.
+### 6a. AI create (headline paid feature)
+
+The flow: **select a few images on the big wall → they're sampled as visual
+references → write a prompt → generate a new image right onto the wall.** The
+moodboard's own contents become the material for creating more.
+
+- **Engine — Google "Nano Banana" (Gemini 2.5 Flash Image) as primary.** It
+  natively **blends up to 20 reference images** into one composition with
+  character/style consistency, ~**$0.039/image**, seconds to generate — a near-
+  perfect match for "sample these, make that." Nano Banana 2 (Gemini 3.x Flash
+  Image) is the newer/cheaper/faster variant to target.
+- **Higgsfield as the second engine**, especially for **image→video / motion**
+  (it exposes an API on the Creator plan, Bearer-token, 100+ models incl. FLUX).
+  Use it when the output wanted is animated, not still.
+- **Selection UX:** multi-select on the wall (tap/click to add to a tray), a
+  prompt bar appears, choose engine + aspect, generate. Result lands as a new
+  Block in an "AI / generated" source so it's part of the graph like anything
+  else.
+- **Cost control:** generation is metered → this is the natural **paid** feature
+  (per-image cost is real). Free tier: none or a tiny trial; paid: generation +
+  higher limits.
+
+Sources: [Gemini 2.5 Flash Image (Nano Banana) API](https://ai.google.dev/gemini-api/docs/models/gemini-2.5-flash-image),
+[Nano Banana image generation](https://ai.google.dev/gemini-api/docs/image-generation),
+[Higgsfield Cloud API](https://cloud.higgsfield.ai/).
+
+### 6b. AI search (later)
+
+Apple-Photos-style: **find exactly the image you mean** across the whole wall.
+
+- On ingest, compute an **image embedding** (CLIP-class) per Block; store in a
+  vector index.
+- Search box: text → nearest blocks; or "more like this" from any image. Optional
+  auto-tags (color/object/mood) feed the `filter` edge op.
+- Cheap at this scale. **Deferred** until connectors + graph + create are solid.
 
 ## 7. Getting images in & sharing
 
@@ -144,21 +229,28 @@ description or by visual similarity.
 
 ## 8. Milestones
 
-- **v2.0 — Motion & Scramble** *(frontend only, ships on current stack)*
+- **v2.0 — Motion, Scramble & backgrounds** *(frontend only, ships on current stack)*
   Rename Scramble + arrows icon, expand-animation polish, zoom-on-move parallax,
-  reduced-motion. No backend change.
+  background/theme switcher (§4 palette), reduced-motion. No backend change.
 - **v2.1 — Upload + Are.na connector** *(still GitHub-feasible at small scale)*
-  Real upload from computer/web; Are.na channel as a Source; connectors submenu
-  in the glass menu.
+  Real upload from computer/web; Are.na channel as a Source; connectors submenu.
 - **v2.2 — Data layer migration** *(the big one)*
   Stand up Cloudflare R2 + D1 + Workers; move ingest off Actions; frontend reads
   the API; import the full ~2k IG archive with a per-source cap.
-- **v2.3 — Boards & node graph**
-  Multiple boards, boards menu, node/patch mode with `union/filter/sample/weight`.
-- **v2.4 — Pinterest connector**
+- **v2.3 — Node editor & PLANs**
+  Bottom-docked node editor, source/directory nodes, PLAN node (double-click =
+  active), Viewport port, `+ add directories`, edge ops `union/filter/sample/weight`.
+- **v2.4 — AI create** *(headline paid feature)*
+  Multi-select on the wall → prompt bar → **Nano Banana** generation (Higgsfield
+  for motion) → result back onto the wall. Metering + paywall.
+- **v2.5 — Pinterest connector**
   OAuth, Trial→Standard access, board pins as a Source.
-- **v2.5 — AI search**
+- **v2.6 — AI search**
   Embeddings on ingest, semantic + similarity search, auto-tags.
+
+*Ordering note:* AI create (v2.4) needs only wall-selection + a source + the
+Gemini API — no vector DB — so it ships before AI search. It's the biggest draw,
+so it's front-loaded once the node editor exists.
 
 ## 9. Business model (ideas — no ads, ever)
 
@@ -173,8 +265,8 @@ economy. Values-aligned options, best first:
    domain — a super-minimal, image-only personal site / portfolio. Natural fit:
    the moodboard *is* already a webpage. Designers/architects (the author's own
    world) would pay for this.
-3. **AI search as premium.** Semantic "find the one I mean" gated to paid — it's
-   a real cost and a real wow.
+3. **AI create as premium (headline).** Generation is metered per image, so it's
+   the natural paywall — and it's the biggest draw (§6a). AI search follows.
 4. **Print / export on demand.** Turn a board into a physical zine, poster, or
    contact sheet (print-on-demand). One-off revenue, deeply on-brand for a
    visual-archive tool.
@@ -186,6 +278,27 @@ economy. Values-aligned options, best first:
 
 Deliberately **not** doing: ad spots, sponsored images, selling data, engagement
 mechanics. The absence of these is part of what people would pay for.
+
+---
+
+## 10. Speed is a hard constraint
+
+The whole pitch is "faster than Miro / Pinterest / Are.na." That only holds if
+speed is engineered, not hoped for. Non-negotiables:
+
+- **Instant first paint.** The wall shows cached thumbnails immediately; full-res
+  loads lazily. Never block on a connector fetch.
+- **Serve small, serve close.** Thumbnails (~a few hundred px) for the wall,
+  full-res only on expand. Object store with zero-egress + CDN (R2) so images
+  come from the edge.
+- **Virtualized everything.** The wall never mounts more than ~300 nodes (already
+  true in v1); the node editor virtualizes too once directories are large.
+- **Optimistic + local-first UI.** Wiring nodes, activating a PLAN, scrambling,
+  selecting for a prompt — all instant on the client; the network catches up.
+- **Connectors sync in the background** on a cron, never on the user's critical
+  path. Opening a PLAN reads local/cached state, not the source API.
+- **Budget:** interaction < 100 ms, wall first paint < 1 s on a warm cache. Treat
+  regressions here as bugs, not polish.
 
 ---
 
