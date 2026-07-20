@@ -1,0 +1,38 @@
+name: Sync IG feed
+
+on:
+  schedule:
+    - cron: '0 * * * *'   # every hour
+  workflow_dispatch:
+
+concurrency:
+  group: feed-write
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run sync
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+        run: node scripts/sync.mjs
+
+      - name: Commit changes
+        run: |
+          git config user.name  "egorithm-bot"
+          git config user.email "bot@egorithm"
+          git add data/feed.json media/
+          git diff --cached --quiet && echo "nothing changed" && exit 0
+          git commit -m "sync: update feed $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && break || sleep 5
+          done

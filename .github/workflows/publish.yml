@@ -1,0 +1,49 @@
+name: Publish queue to IG
+
+on:
+  push:
+    paths:
+      - 'queue/*.jpg'
+  workflow_dispatch:
+
+concurrency:
+  group: feed-write
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Publish queued images
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          # raw.githubusercontent.com serves committed files publicly — IG ingests from here.
+          # If IG rejects raw URLs (M0 test), switch to the jsDelivr CDN variant:
+          # RAW_BASE: https://cdn.jsdelivr.net/gh/winstt/egorithm@main
+          RAW_BASE: https://raw.githubusercontent.com/winstt/egorithm/main
+        run: node scripts/publish.mjs
+
+      - name: Sync feed after publish
+        env:
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+        run: node scripts/sync.mjs
+
+      - name: Commit result
+        run: |
+          git config user.name  "egorithm-bot"
+          git config user.email "bot@egorithm"
+          git add data/feed.json media/ queue/
+          git diff --cached --quiet && echo "nothing to commit" && exit 0
+          git commit -m "publish: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          for i in 1 2 3; do
+            git pull --rebase origin main && git push && break || sleep 5
+          done
