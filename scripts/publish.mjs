@@ -1,12 +1,12 @@
 // Publishes every JPEG in /queue to Instagram (container → poll → publish).
-// Env: IG_USER_ID, IG_ACCESS_TOKEN, RAW_BASE (e.g. https://raw.githubusercontent.com/winstt/egorithm/main)
+// Env: IG_BUSINESS_ID, IG_PAGE_TOKEN, RAW_BASE (e.g. https://raw.githubusercontent.com/winstt/egorithm/main)
 // Successfully published files are deleted (sync.mjs then pulls the IG copy
 // into /media); failures move to /queue/failed for inspection.
 import { readdir, unlink, rename, mkdir } from 'node:fs/promises'
 import { ig, requireEnv } from './lib.mjs'
 
-const USER_ID = requireEnv('IG_USER_ID')
-const TOKEN = requireEnv('IG_ACCESS_TOKEN')
+const IG_ID = requireEnv('IG_BUSINESS_ID')
+const TOKEN = requireEnv('IG_PAGE_TOKEN')
 const RAW_BASE = requireEnv('RAW_BASE')
 
 const files = (await readdir('queue').catch(() => [])).filter(f => f.endsWith('.jpg'))
@@ -19,7 +19,7 @@ let failed = 0
 for (const file of files) {
   try {
     console.log(`publishing ${file}…`)
-    const { id: creationId } = await ig(`${USER_ID}/media`, {
+    const { id: creationId } = await ig(`${IG_ID}/media`, {
       image_url: `${RAW_BASE}/queue/${file}`,
       access_token: TOKEN,
     }, 'POST')
@@ -31,7 +31,7 @@ for (const file of files) {
     }
     if (status !== 'FINISHED') throw new Error(`container status: ${status}`)
 
-    await ig(`${USER_ID}/media_publish`, { creation_id: creationId, access_token: TOKEN }, 'POST')
+    await ig(`${IG_ID}/media_publish`, { creation_id: creationId, access_token: TOKEN }, 'POST')
     await unlink(`queue/${file}`)
     console.log(`published ${file}`)
   } catch (err) {

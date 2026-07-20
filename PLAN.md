@@ -6,18 +6,41 @@ This file is the source of truth. Update it when decisions change.
 
 ---
 
-## 1. Hard constraints (verified July 2026)
+## 1. Hard constraints (verified & set up July 2026)
 
-These are Instagram platform facts the whole architecture is built around:
+These are the Instagram platform facts the architecture is built around. **M0 is
+complete** — the values below are the real, working configuration.
 
-1. **A personal IG account cannot be used.** The account must be converted to a **Professional account (Creator or Business)**. Reading media and publishing both go through the Instagram Graph API.
-2. Two API flavors exist. We use **"Instagram API with Instagram Login"** — it does *not* require a linked Facebook Page (the older "with Facebook Login" flavor does).
-3. **Publishing is a two-step call:** `POST /{ig-user-id}/media` (creates a container from a **publicly reachable image URL**, JPEG) → `POST /{ig-user-id}/media_publish`. Caption is optional — omitting it gives exactly the "no description" post we want.
-4. **Tokens:** Instagram User long-lived token, valid **60 days**, refreshable via `GET /refresh_access_token` any time after it's 24h old. Must be refreshed on a schedule or the pipeline dies silently.
-5. Own-account use (owner is a tester/admin on the Meta app) needs **no App Review**. Review (2–4 weeks) only matters if other people's accounts ever connect — that's a "future" concern.
-6. API publishing is rate-limited (rolling window, ~25–50 posts/day) — irrelevant for a personal moodboard but documented.
+1. **A personal IG account cannot be used.** The target account `y0ungtrailblaze`
+   (IG Business account, ~2251 posts) is a Professional account. Reading and
+   publishing both go through the **Facebook Graph API** (`graph.facebook.com/v21.0`).
+2. **We use the "Instagram API with Facebook Login" flavor.** The "Instagram
+   Login" flavor was attempted first but blocked in Development mode by the
+   Instagram-Tester role requirement (Meta had "create test users" temporarily
+   disabled). Facebook Login requires the IG account to be connected to a
+   **Facebook Page** — so a dedicated empty page **"Egorithm"** (id `1179725761896560`)
+   was created and `y0ungtrailblaze` linked to it.
+3. **Key IDs / tokens:**
+   - Meta App ID: `1488034773079990` (app name **EGORITHM-IG**, type Business)
+   - IG Business Account ID: **`17841470673507793`** → secret `IG_BUSINESS_ID`
+   - **Long-lived Page access token** → secret `IG_PAGE_TOKEN`. Derived from a
+     60-day long-lived *user* token, so the *page* token **does not expire**
+     (valid until password change / permission revoke). This removes the whole
+     60-day token-refresh problem the plan originally carried.
+4. **Publishing is a two-step call:** `POST /{ig-business-id}/media` (creates a
+   container from a **publicly reachable JPEG URL**) → poll `status_code` until
+   `FINISHED` → `POST /{ig-business-id}/media_publish`. Caption omitted = the
+   "no description" post we want. **Verified working** with a picsum test image.
+5. Own-account use needs **no App Review** (owner is app admin). Review only
+   matters if other people's accounts ever connect — a "future" concern.
+6. API publishing is rate-limited (~25–50 posts/day) — irrelevant here.
 
-Required permissions/scopes: `instagram_business_basic`, `instagram_business_content_publish`.
+Granted permissions: `instagram_basic`, `instagram_content_publish`,
+`pages_show_list`, `pages_read_engagement`, `business_management`.
+
+> If the Page token ever breaks: re-run the Graph API Explorer → exchange for a
+> long-lived user token → `GET /{page-id}?fields=access_token` to mint a fresh
+> non-expiring Page token, and update the `IG_PAGE_TOKEN` secret.
 
 ---
 
@@ -36,24 +59,24 @@ No servers. Three GitHub features cover everything. The repo must be **public** 
 │  /.github/workflows                                                  │
 │      sync.yml     cron (hourly) + manual: IG → feed.json             │
 │      publish.yml  on push to /queue: queue → IG → feed.json          │
-│      refresh.yml  cron (1st + 15th monthly): refresh 60-day token    │
 │      deploy.yml   build site → GitHub Pages                          │
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-**Read path (IG → site):** `sync.yml` calls `GET /me/media?fields=id,media_type,media_url,permalink,timestamp` (paginated — follow `paging.next` until exhausted), keeps only `media_type == IMAGE` for now, downloads images into `/media/`, writes `feed.json`, commits. Pages redeploys. Notes:
-- **The API does not return image dimensions** — `width`/`height` are not queryable fields on `/me/media`. Derive them from the downloaded file (e.g. `identify`/`sips`) and store in `feed.json`; the layout engine needs them before images load.
+**Read path (IG → site):** `sync.yml` calls `GET /{ig-business-id}/media?fields=id,media_type,media_url,permalink,timestamp` (paginated), keeps only `media_type == IMAGE`, mirrors the **newest `MAX_POSTS` (default 300)** into `/media/`, writes `feed.json`, commits. Pages redeploys. Notes:
+- **The account has ~2251 posts** — mirroring all of them would bloat the repo to hundreds of MB, so sync caps at the newest `MAX_POSTS`. Raise the cap later if wanted.
+- **The API does not return image dimensions** — derive `w`/`h` from the downloaded file (a tiny built-in JPEG SOF-marker reader in `lib.mjs`, no deps) and store in `feed.json`; the layout engine needs them before images load.
 - *Images are committed rather than hotlinked because IG `media_url`s expire after a few days.*
-- Sync is a **full reconciliation**: `feed.json` mirrors exactly what the API returns, so posts deleted on IG disappear from the board (their files pruned from `/media/`).
+- Sync reconciles within the window: files outside the newest `MAX_POSTS` are pruned from `/media/`.
 
 **Write path (site → IG):** adding a picture = getting a file into `/queue/`.
 `publish.yml` fires on push: takes each queued JPEG, its raw URL (`raw.githubusercontent.com/...`) is already public, so the workflow creates the media container from that URL, **polls the container's `status_code` until `FINISHED`** (ingestion is async; `ERROR` → move to `/queue/failed/`), calls `media_publish`, then moves the file into `/media/`, updates `feed.json`, commits.
-- *M0 must verify IG accepts a raw.githubusercontent URL (content-type quirks); fallback: the GitHub Pages URL or jsDelivr (`cdn.jsdelivr.net/gh/...`) for the same committed file.*
+- *Fallback if raw.githubusercontent URLs are ever rejected: GitHub Pages URL or jsDelivr (`cdn.jsdelivr.net/gh/...`) for the same committed file.*
 - All committing workflows share a `concurrency` group and push with rebase-retry, so `sync` and `publish` can't race each other on `feed.json`.
 
 **How the site itself uploads to `/queue/`:** the frontend calls the GitHub Contents API (`PUT /repos/{owner}/egorithm/contents/queue/{name}.jpg`) using a **fine-grained PAT** (contents: read/write, this repo only) that the owner pastes once into the menu; it's kept in `localStorage`. Visitors without the token simply see a read-only board. This is the entire "auth system" — good enough for a single-owner project, revisit if it ever goes multi-user.
 
-**Secrets (GitHub Actions secrets):** `IG_USER_ID`, `IG_ACCESS_TOKEN` (long-lived). `refresh.yml` refreshes the token and writes it back with `gh secret set` (needs a repo-admin PAT stored as `ADMIN_PAT`).
+**Secrets (GitHub Actions secrets):** `IG_BUSINESS_ID` (`17841470673507793`) and `IG_PAGE_TOKEN` (non-expiring long-lived Page token). No token-refresh workflow needed — this is the payoff of the Facebook-Login route.
 
 ---
 
@@ -91,8 +114,13 @@ No servers. Three GitHub features cover everything. The repo must be **public** 
 
 ## 4. Milestones
 
-**M0 — Instagram plumbing (blocking, do first)**
-Convert IG account to Creator. Create Meta app (Instagram API with Instagram Login), add owner as tester, complete the login flow once by hand to obtain the long-lived token. Verify with `curl`: fetch `/me/media` (paginated), then publish one test image **from a raw.githubusercontent.com URL specifically** — this validates the whole no-server design; if IG rejects the raw URL, switch the plan to the Pages/jsDelivr fallback. *Nothing else matters until this round-trips.*
+**M0 — Instagram plumbing ✅ DONE (2026-07-20)**
+IG account is Professional; Meta app **EGORITHM-IG** created; `y0ungtrailblaze`
+linked to the **Egorithm** Facebook Page; long-lived non-expiring Page token
+obtained; `/media` read (2251 posts) and a test publish both verified via `curl`.
+Route ended up as **Facebook Login** (not Instagram Login) — see §1. IDs/tokens
+live there. Remaining M0 tail: create the GitHub repo, set the two secrets,
+enable Pages.
 
 **M1 — Static board**
 Repo + Pages + `deploy.yml`. `sync.yml` producing `feed.json` + `/media/`. Site renders the feed as the seeded scatter (no infinity yet), lazy-loaded, responsive. → *Deployed URL showing the real IG feed.*
@@ -104,7 +132,7 @@ Tiling + virtualization + pan/zoom with inertia. Perf pass (Lighthouse, throttle
 FLIP expand/collapse, liquid-glass button + menu, Shuffle.
 
 **M4 — Publish pipeline**
-`publish.yml`, client-side JPEG processing + Contents-API upload, optimistic placeholder, `refresh.yml` token refresh. → *Full loop: drop a picture on the site, see it appear on Instagram.*
+`publish.yml`, client-side JPEG processing + Contents-API upload, optimistic placeholder. (No token-refresh workflow — Page token is non-expiring.) → *Full loop: drop a picture on the site, see it appear on Instagram.*
 
 **M5 — Hardening**
 Failure states (bad token, IG rejection → queue file moved to `/queue/failed/` + red pulse on placeholder), dark mode, reduced-motion support, README.
@@ -115,14 +143,14 @@ Failure states (bad token, IG rejection → queue file moved to `/queue/failed/`
 
 | Risk | Mitigation |
 |---|---|
-| Token expires silently (60d) | `refresh.yml` twice a month + workflow failure notifications to email |
-| **GitHub disables cron workflows after 60 days without repo activity** — would kill sync *and* token refresh | keepalive step in `refresh.yml`: bump a `.keepalive` file so every run is a commit; verify workflows still enabled when returning to the project after a break |
-| `ADMIN_PAT` (used to rotate the IG token secret) itself expires (fine-grained PATs ≤ 1 year) | set a calendar reminder at creation; `refresh.yml` fails loudly if the PAT is dead |
-| IG rejects aspect ratio (must be 4:5 → 1.91:1) | client-side crop prompt before upload |
+| Page token invalidated (password change / revoke) | rare; recovery steps documented in §1. Non-expiring by default, so no scheduled refresh |
+| **GitHub disables cron workflows after 60 days without repo activity** — would silently stop the hourly sync | any publish or manual run re-arms it; if returning after a long break, check Actions tab is enabled. (No keepalive workflow now that refresh is gone — revisit if the board is left untouched for months) |
+| IG rejects aspect ratio (must be 4:5 → 1.91:1) | client-side crop into range before upload (`upload.ts`) |
 | `media_url` expiry | never hotlink; images always committed to `/media/` |
 | Meta API version deprecations (~2yr lifecycle) | pin version (v21.0), note upgrade in this file |
-| Repo size growth from committed images | downscale to ≤1440px JPEG (~200–400 KB each); thousands of posts before it matters |
+| Repo size growth from committed images | mirror only newest `MAX_POSTS` (300); downscale uploads to ≤1440px JPEG |
 | PAT in localStorage | fine-grained, single-repo, contents-only; rotate if leaked; owner-only threat model |
+| **App Secret was pasted in chat during setup** | already reset once; if reusing, reset again in App Settings → Basic. Page token does not embed the secret, so the live pipeline is unaffected |
 
 ## 6. Future (explicitly out of scope now)
 

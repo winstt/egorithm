@@ -1,4 +1,7 @@
-export const API = 'https://graph.instagram.com/v21.0'
+// Instagram publishing via the Facebook Graph API (the IG account is a
+// Professional account connected to the "Egorithm" Facebook Page). We use a
+// long-lived Page access token, which does not expire.
+export const API = 'https://graph.facebook.com/v21.0'
 
 export async function ig(path, params = {}, method = 'GET') {
   const url = new URL(`${API}/${path}`)

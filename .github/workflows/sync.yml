@@ -23,7 +23,8 @@ jobs:
 
       - name: Run sync
         env:
-          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_BUSINESS_ID: ${{ secrets.IG_BUSINESS_ID }}
+          IG_PAGE_TOKEN: ${{ secrets.IG_PAGE_TOKEN }}
         run: node scripts/sync.mjs
 
       - name: Commit changes

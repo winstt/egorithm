@@ -1,31 +1,35 @@
 // Mirrors the IG feed into /media + data/feed.json (full reconciliation).
-// Env: IG_ACCESS_TOKEN
+// Env: IG_BUSINESS_ID, IG_PAGE_TOKEN
+// Optional: MAX_POSTS (default 300) — the account has thousands of posts;
+// downloading all of them would bloat the repo, so we mirror the newest N.
 import { readFile, writeFile, readdir, unlink, mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import { ig, jpegSize, requireEnv } from './lib.mjs'
 
-const TOKEN = requireEnv('IG_ACCESS_TOKEN')
+const IG_ID = requireEnv('IG_BUSINESS_ID')
+const TOKEN = requireEnv('IG_PAGE_TOKEN')
+const MAX_POSTS = Number(process.env.MAX_POSTS ?? 300)
 const MEDIA_DIR = 'media'
 const FEED_PATH = 'data/feed.json'
 
-async function fetchAllMedia() {
+async function fetchRecentMedia() {
   const out = []
-  let res = await ig('me/media', {
+  let res = await ig(`${IG_ID}/media`, {
     fields: 'id,media_type,media_url,permalink,timestamp',
     limit: '100',
     access_token: TOKEN,
   })
   for (;;) {
     out.push(...res.data)
-    if (!res.paging?.next) break
+    if (out.length >= MAX_POSTS || !res.paging?.next) break
     const next = await fetch(res.paging.next)
     res = await next.json()
     if (res.error) throw new Error(JSON.stringify(res.error))
   }
-  return out.filter(m => m.media_type === 'IMAGE')
+  return out.filter(m => m.media_type === 'IMAGE').slice(0, MAX_POSTS)
 }
 
-const posts = await fetchAllMedia()
+const posts = await fetchRecentMedia()
 await mkdir(MEDIA_DIR, { recursive: true })
 
 const items = []
@@ -45,7 +49,7 @@ for (const post of posts) {
   items.push({ id: post.id, src: `${file}`, w, h, permalink: post.permalink, ts: post.timestamp })
 }
 
-// prune media for posts deleted on IG
+// prune media for posts no longer in the mirrored window
 const keep = new Set(posts.map(p => `${p.id}.jpg`))
 for (const f of await readdir(MEDIA_DIR)) {
   if (/^\d+\.jpg$/.test(f) && !keep.has(f)) {

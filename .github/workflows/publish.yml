@@ -24,17 +24,18 @@ jobs:
 
       - name: Publish queued images
         env:
-          IG_USER_ID: ${{ secrets.IG_USER_ID }}
-          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_BUSINESS_ID: ${{ secrets.IG_BUSINESS_ID }}
+          IG_PAGE_TOKEN: ${{ secrets.IG_PAGE_TOKEN }}
           # raw.githubusercontent.com serves committed files publicly — IG ingests from here.
-          # If IG rejects raw URLs (M0 test), switch to the jsDelivr CDN variant:
+          # If IG ever rejects raw URLs, switch to the jsDelivr CDN variant:
           # RAW_BASE: https://cdn.jsdelivr.net/gh/winstt/egorithm@main
           RAW_BASE: https://raw.githubusercontent.com/winstt/egorithm/main
         run: node scripts/publish.mjs
 
       - name: Sync feed after publish
         env:
-          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          IG_BUSINESS_ID: ${{ secrets.IG_BUSINESS_ID }}
+          IG_PAGE_TOKEN: ${{ secrets.IG_PAGE_TOKEN }}
         run: node scripts/sync.mjs
 
       - name: Commit result
