@@ -64,6 +64,7 @@ export function openLightbox(source: HTMLImageElement, p: Placement, opts: Light
     ty = e.clientY - (e.clientY - ty) * (ns / s)
     s = ns
     setTransform()
+    img.classList.toggle('zoomed', s > baseScale + 1e-3)
   }, { passive: false })
 
   // drag to pan when zoomed; a clean tap on the fitted image closes

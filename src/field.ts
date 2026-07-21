@@ -253,7 +253,6 @@ export class Field {
     c.addEventListener('pointerdown', e => {
       cancelAnimationFrame(this.inertiaRaf)
       this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
-      c.setPointerCapture(e.pointerId)
       if (this.pointers.size === 1) {
         this.downPos = { x: e.clientX, y: e.clientY }
         this.moved = false
@@ -264,7 +263,7 @@ export class Field {
       }
     })
 
-    c.addEventListener('pointermove', e => {
+    window.addEventListener('pointermove', e => {
       const prev = this.pointers.get(e.pointerId)
       if (!prev) return
       this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
@@ -294,6 +293,7 @@ export class Field {
     })
 
     const end = (e: PointerEvent): void => {
+      if (!this.pointers.has(e.pointerId)) return // pointer didn't start on the field
       const wasSingle = this.pointers.size === 1
       this.pointers.delete(e.pointerId)
       if (this.pointers.size === 0) c.classList.remove('dragging')
@@ -309,8 +309,8 @@ export class Field {
         this.startInertia()
       }
     }
-    c.addEventListener('pointerup', end)
-    c.addEventListener('pointercancel', end)
+    window.addEventListener('pointerup', end)
+    window.addEventListener('pointercancel', end)
 
     c.addEventListener('wheel', e => {
       e.preventDefault()
