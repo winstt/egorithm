@@ -1,9 +1,10 @@
 import type { Placement } from './types'
 import { Layout } from './layout'
 
-const MIN_SCALE = 0.5
+const MIN_SCALE = 0.18  // bigger zoom-out (was 0.5)
 const MAX_SCALE = 2
 const VIEW_MARGIN = 0.5 // extra viewport fractions rendered on each side
+const MAX_NODES = 500   // hard cap on live <img> nodes — protects zoom-out perf
 const CLICK_SLOP = 6
 
 interface PendingItem {
@@ -34,6 +35,7 @@ export class Field {
   private rafPending = false
   private inertiaRaf = 0
   private prefetched = new Set<string>()
+  private seen = new Set<string>()
 
   constructor(
     private container: HTMLElement,
@@ -130,7 +132,7 @@ export class Field {
     const right = x + innerWidth / scale + mx
     const bottom = y + innerHeight / scale + my
 
-    const needed = new Map<string, Placement>()
+    let needed = new Map<string, Placement>()
     for (let tx = Math.floor(left / T); tx <= Math.floor(right / T); tx++) {
       for (let ty = Math.floor(top / T); ty <= Math.floor(bottom / T); ty++) {
         for (const p of this.layout.tile(tx, ty)) {
@@ -139,6 +141,20 @@ export class Field {
           }
         }
       }
+    }
+
+    // Zoomed far out the viewport can cover thousands of images — keep only the
+    // nearest MAX_NODES to the viewport centre so the DOM stays bounded.
+    if (needed.size > MAX_NODES) {
+      const cx = x + innerWidth / scale / 2
+      const cy = y + innerHeight / scale / 2
+      needed = new Map(
+        [...needed].sort(([, a], [, b]) => {
+          const da = (a.x + a.w / 2 - cx) ** 2 + (a.y + a.h / 2 - cy) ** 2
+          const db = (b.x + b.w / 2 - cx) ** 2 + (b.y + b.h / 2 - cy) ** 2
+          return da - db
+        }).slice(0, MAX_NODES),
+      )
     }
 
     for (const [key, el] of this.mounted) {
@@ -169,6 +185,7 @@ export class Field {
 
   /** Warm thumbnails one ring beyond the mounted margin so panning never pops. */
   private prefetchRing(left: number, top: number, right: number, bottom: number, mx: number, my: number, T: number): void {
+    if (this.view.scale < 0.4) return // zoomed out: too many to prefetch, skip
     const oL = left - mx, oT = top - my, oR = right + mx, oB = bottom + my
     for (let tx = Math.floor(oL / T); tx <= Math.floor(oR / T); tx++) {
       for (let ty = Math.floor(oT / T); ty <= Math.floor(oB / T); ty++) {
@@ -196,8 +213,16 @@ export class Field {
     el.draggable = false
     el.dataset.key = key
     this.applyPlacement(el, p)
-    if (el.complete) el.classList.add('loaded')
-    else el.addEventListener('load', () => el.classList.add('loaded'), { once: true })
+    if (this.seen.has(key)) {
+      el.classList.add('instant', 'loaded') // already discovered — skip the pop
+    } else {
+      this.seen.add(key)
+      if (this.seen.size > 4000) this.seen.clear()
+      const reveal = (): void => el.classList.add('loaded')
+      // rAF so the initial (scale 0.9) state paints once → the popout transitions
+      if (el.complete) requestAnimationFrame(reveal)
+      else el.addEventListener('load', reveal, { once: true })
+    }
     ;(el as HTMLImageElement & { _p?: Placement })._p = p
     this.world.appendChild(el)
     return el

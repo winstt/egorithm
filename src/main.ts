@@ -3,10 +3,12 @@ import { Layout } from './layout'
 import { Field } from './field'
 import { openLightbox } from './lightbox'
 import { initMenu } from './menu'
+import { initTheme } from './theme'
 import { getToken, askToken, processImage, uploadToQueue } from './upload'
 import { FEED_POLL_MS } from './config'
 
 async function boot(): Promise<void> {
+  initTheme()
   const feed = await loadFeed()
   let knownIds = new Set(feed.items.map(i => i.id))
 
