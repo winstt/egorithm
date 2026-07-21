@@ -93,6 +93,40 @@ export async function uploadToQueue(blob: Blob, token: string): Promise<string> 
   return name
 }
 
+/**
+ * Remove a block from the source directory listing (data/r2-manifest.json) via
+ * the GitHub Contents API — it vanishes from the board on the next deploy.
+ * (The raw R2 object is left orphaned; a cleanup Worker will prune it later.)
+ */
+export async function deleteFromManifest(id: string, token: string): Promise<void> {
+  const path = 'data/r2-manifest.json'
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}`
+  const headers = { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' }
+
+  const getRes = await fetch(url, { headers })
+  if (!getRes.ok) throw new Error(`manifest read failed: ${getRes.status}`)
+  const meta = await getRes.json()
+  const json = new TextDecoder().decode(
+    Uint8Array.from(atob(meta.content.replace(/\n/g, '')), c => c.charCodeAt(0)),
+  )
+  const manifest = JSON.parse(json) as { count?: number; items: { id: string }[] }
+  const before = manifest.items.length
+  manifest.items = manifest.items.filter(it => it.id !== id)
+  if (manifest.items.length === before) return
+  manifest.count = manifest.items.length
+
+  const bytes = new TextEncoder().encode(JSON.stringify(manifest, null, 2) + '\n')
+  let bin = ''
+  for (const b of bytes) bin += String.fromCharCode(b)
+
+  const putRes = await fetch(url, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify({ message: `delete ${id}`, content: btoa(bin), sha: meta.sha }),
+  })
+  if (!putRes.ok) throw new Error(`manifest update failed: ${putRes.status} ${await putRes.text()}`)
+}
+
 function blobToBase64(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const fr = new FileReader()

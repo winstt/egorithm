@@ -36,6 +36,7 @@ export class Field {
   private inertiaRaf = 0
   private prefetched = new Set<string>()
   private seen = new Set<string>()
+  private deleted = new Set<string>()
 
   constructor(
     private container: HTMLElement,
@@ -59,6 +60,17 @@ export class Field {
     this.layout = layout
     this.clear()
     this.scheduleUpdate()
+  }
+
+  /** Hide an item everywhere (deleted) — leaves its spot empty, no reflow. */
+  removeItem(id: string): void {
+    this.deleted.add(id)
+    for (const [key, el] of this.mounted) {
+      if (key.split(':')[1] === id) {
+        el.remove()
+        this.mounted.delete(key)
+      }
+    }
   }
 
   /** Reseed in place and glide mounted items to their new spots. */
@@ -136,6 +148,7 @@ export class Field {
     for (let tx = Math.floor(left / T); tx <= Math.floor(right / T); tx++) {
       for (let ty = Math.floor(top / T); ty <= Math.floor(bottom / T); ty++) {
         for (const p of this.layout.tile(tx, ty)) {
+          if (this.deleted.has(p.item.id)) continue
           if (p.x + p.w > left && p.x < right && p.y + p.h > top && p.y < bottom) {
             needed.set(`${tx},${ty}:${p.item.id}`, p)
           }

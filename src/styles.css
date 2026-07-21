@@ -49,14 +49,22 @@ html, body {
   border-radius: 2px;
   user-select: none;
   -webkit-user-drag: none;
-  opacity: 0;
-  scale: 0.9;
-  transition: opacity 0.4s ease, scale 0.45s cubic-bezier(0.34, 1.42, 0.64, 1);
-  will-change: transform, scale, opacity;
+  will-change: transform;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
-.ph.loaded { opacity: 1; scale: 1; }               /* popout on reveal */
-.ph.instant { transition: none; opacity: 1; scale: 1; } /* re-entry: no re-pop */
+
+/* reveal animation styles — driven by .anim-* on <html> (theme.ts) */
+.ph.instant { transition: none !important; }
+.anim-pop  .ph { opacity: 0; scale: 0.9; transition: opacity .4s ease, scale .45s cubic-bezier(0.34, 1.42, 0.64, 1); }
+.anim-pop  .ph.loaded { opacity: 1; scale: 1; }
+.anim-fade .ph { opacity: 0; transition: opacity .6s ease; }
+.anim-fade .ph.loaded { opacity: 1; }
+.anim-rise .ph { opacity: 0; translate: 0 26px; transition: opacity .45s ease, translate .55s cubic-bezier(0.22, 1, 0.36, 1); }
+.anim-rise .ph.loaded { opacity: 1; translate: 0 0; }
+.anim-zoom .ph { opacity: 0; scale: 1.18; transition: opacity .5s ease, scale .6s cubic-bezier(0.22, 1, 0.36, 1); }
+.anim-zoom .ph.loaded { opacity: 1; scale: 1; }
+.anim-off  .ph { opacity: 1; }
+
 .ph.hidden-src { visibility: hidden; }
 .ph.pending { animation: pulse 1.6s ease-in-out infinite; }
 .ph.failed { animation: none; outline: 2px solid rgba(255, 59, 48, 0.8); opacity: 0.5; }
@@ -104,7 +112,6 @@ html, body {
   flex: none;
 }
 #orb svg { transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1); }
-.glass.open #orb svg { transform: rotate(45deg); }
 .menu-items {
   display: grid;
   max-height: 0;
@@ -112,7 +119,7 @@ html, body {
   transition: max-height 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
 }
 .glass.open { width: 132px; border-radius: 22px; }
-.glass.open .menu-items { max-height: 240px; opacity: 1; }
+.glass.open .menu-items { max-height: 420px; opacity: 1; }
 .menu-items button {
   padding: 12px 18px;
   text-align: left;
@@ -137,6 +144,17 @@ html, body {
   transition: transform 0.15s ease;
 }
 .sw:hover { transform: scale(1.15); }
+.anims { display: none; padding: 0 8px 8px; }
+.anims.open { display: grid; gap: 2px; }
+.anim-opt {
+  padding: 7px 12px;
+  text-align: left;
+  border-radius: 8px;
+  font-size: 13px;
+  opacity: 0.65;
+}
+.anim-opt:hover { background: rgba(127, 127, 127, 0.12); opacity: 1; }
+.anim-opt.active { opacity: 1; font-weight: 600; }
 
 /* ---- lightbox ---- */
 .lb { position: fixed; inset: 0; z-index: 40; }
@@ -162,8 +180,30 @@ html, body {
   border-radius: 2px;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.25);
   transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-  cursor: zoom-out;
+  cursor: grab;
 }
+.lb-del {
+  position: fixed;
+  top: max(18px, env(safe-area-inset-top));
+  right: max(18px, env(safe-area-inset-right));
+  z-index: 41;
+  appearance: none;
+  border: 1px solid var(--glass-edge);
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: blur(14px) saturate(1.6);
+  backdrop-filter: blur(14px) saturate(1.6);
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.lb.open .lb-del { opacity: 0.85; }
+.lb-del:hover { opacity: 1; }
+.lb-del.confirm { border-color: rgba(255, 59, 48, 0.9); color: #ff3b30; }
 
 /* ---- token dialog ---- */
 .tok {

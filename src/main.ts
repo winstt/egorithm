@@ -3,12 +3,13 @@ import { Layout } from './layout'
 import { Field } from './field'
 import { openLightbox } from './lightbox'
 import { initMenu } from './menu'
-import { initTheme } from './theme'
-import { getToken, askToken, processImage, uploadToQueue } from './upload'
+import { initTheme, initAnim } from './theme'
+import { getToken, askToken, processImage, uploadToQueue, deleteFromManifest } from './upload'
 import { FEED_POLL_MS } from './config'
 
 async function boot(): Promise<void> {
   initTheme()
+  initAnim()
   const feed = await loadFeed()
   let knownIds = new Set(feed.items.map(i => i.id))
 
@@ -17,12 +18,23 @@ async function boot(): Promise<void> {
     document.getElementById('field')!,
     document.getElementById('world')!,
     layout,
-    (el, p) => openLightbox(el, p),
+    (el, p) => openLightbox(el, p, { onDelete: deleteFlow }),
   )
+
+  async function deleteFlow(id: string): Promise<void> {
+    field.removeItem(id) // optimistic — hide it from the wall immediately
+    const token = getToken() ?? (await askToken())
+    if (!token) return   // hidden this session only; add a token to persist
+    try {
+      await deleteFromManifest(id, token)
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   initMenu({
     shuffle: () => field.shuffle(),
-    add: () => document.getElementById('file-input')!.click(),
+    upload: () => document.getElementById('file-input')!.click(),
   })
 
   document.getElementById('file-input')!.addEventListener('change', async e => {

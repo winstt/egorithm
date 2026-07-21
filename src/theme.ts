@@ -31,3 +31,28 @@ export function setBackground(color: string): void {
   localStorage.setItem(KEY, color)
   applyBackground(color)
 }
+
+// ── reveal animation for wall images ────────────────────────────────────────
+const ANIM_KEY = 'egorithm.anim'
+export const ANIMS = ['pop', 'fade', 'rise', 'zoom', 'off'] as const
+export type Anim = (typeof ANIMS)[number]
+
+export function currentAnim(): Anim {
+  const v = localStorage.getItem(ANIM_KEY)
+  return (ANIMS as readonly string[]).includes(v ?? '') ? (v as Anim) : 'pop'
+}
+
+export function applyAnim(name: Anim): void {
+  const cl = document.documentElement.classList
+  for (const a of ANIMS) cl.remove(`anim-${a}`)
+  cl.add(`anim-${name}`)
+}
+
+export function initAnim(): void {
+  applyAnim(currentAnim())
+}
+
+export function setAnim(name: Anim): void {
+  localStorage.setItem(ANIM_KEY, name)
+  applyAnim(name)
+}
