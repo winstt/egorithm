@@ -33,6 +33,7 @@ export class Field {
   private moved = false
   private rafPending = false
   private inertiaRaf = 0
+  private prefetched = new Set<string>()
 
   constructor(
     private container: HTMLElement,
@@ -162,11 +163,33 @@ export class Field {
         this.world.appendChild(pi.el)
       }
     }
+
+    this.prefetchRing(left, top, right, bottom, mx, my, T)
+  }
+
+  /** Warm thumbnails one ring beyond the mounted margin so panning never pops. */
+  private prefetchRing(left: number, top: number, right: number, bottom: number, mx: number, my: number, T: number): void {
+    const oL = left - mx, oT = top - my, oR = right + mx, oB = bottom + my
+    for (let tx = Math.floor(oL / T); tx <= Math.floor(oR / T); tx++) {
+      for (let ty = Math.floor(oT / T); ty <= Math.floor(oB / T); ty++) {
+        for (const p of this.layout.tile(tx, ty)) {
+          const key = `${tx},${ty}:${p.item.id}`
+          if (this.mounted.has(key) || this.prefetched.has(key)) continue
+          if (p.x + p.w > oL && p.x < oR && p.y + p.h > oT && p.y < oB) {
+            const im = new Image()
+            im.decoding = 'async'
+            im.src = p.item.thumb
+            this.prefetched.add(key)
+          }
+        }
+      }
+    }
+    if (this.prefetched.size > 1200) this.prefetched.clear()
   }
 
   private mount(key: string, p: Placement): HTMLImageElement {
     const el = document.createElement('img')
-    el.src = p.item.src
+    el.src = p.item.thumb
     el.loading = 'lazy'
     el.decoding = 'async'
     el.className = 'ph'

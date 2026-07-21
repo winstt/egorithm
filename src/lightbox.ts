@@ -26,8 +26,14 @@ export function openLightbox(source: HTMLImageElement, p: Placement): void {
   bg.className = 'lb-bg'
   const img = document.createElement('img')
   img.className = 'lb-img'
-  img.src = source.src
+  img.src = source.src // thumbnail — instant, matches the FLIP source
   img.draggable = false
+  // preload the full-res original and swap it in when ready
+  if (p.item.src !== source.src) {
+    const full = new Image()
+    full.onload = () => { if (lb.isConnected) img.src = p.item.src }
+    full.src = p.item.src
+  }
   img.style.width = `${rect.width}px`
   img.style.height = `${rect.height}px`
   img.style.transform = `translate(${rect.left}px, ${rect.top}px) scale(1)`

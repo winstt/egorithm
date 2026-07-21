@@ -1,6 +1,7 @@
 export interface FeedItem {
   id: string
-  src: string
+  src: string      // full-res URL (lightbox / expand)
+  thumb: string    // wall thumbnail URL
   w: number
   h: number
   permalink?: string
