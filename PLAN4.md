@@ -225,6 +225,31 @@ the node editor; optimistic/local-first interactions; connectors sync in the
 background, never on the user's path. **Budget: interaction < 100 ms, wall first
 paint < 1 s warm.** Regressions here are bugs, not polish.
 
+### 11a. Rendering / LOD (decided 2026-07-21)
+
+The wall never loads full-res. The problem isn't *which DOM nodes to mount*
+(viewport culling already solves that in `field.ts`) — it's *how many bytes*.
+2237 full-res IG images ≈ 500 MB, so a level-of-detail chain:
+
+1. **Viewport culling (have it):** mount only blocks within the viewport + a
+   margin; ~300 live `<img>` max, regardless of archive size. Keep it.
+2. **Serve small — thumbnails for the wall.** Each block has a pre-generated
+   ~640px `_thumb` in R2; the wall loads that, not the original. (Future upgrade:
+   Cloudflare Images / Image Resizing to serve sizes on-the-fly instead of
+   pre-generating — needs a custom domain; pre-gen is the no-dependency start.)
+3. **Instant placeholder — dominant colour.** Each block carries an average/
+   dominant colour (hex) in the manifest, so the wall paints a coloured box
+   immediately (dimensions already known → no reflow), then fades in the thumb.
+   Zero extra requests. (Later: a tiny LQIP blur if we want more than a colour.)
+4. **Bounded prefetch ring.** Prefetch thumbnails one ring *beyond* the viewport
+   in the direction of travel, so panning never pops. This is the *right* version
+   of "prerender" — a bounded margin, **not** the whole board.
+5. **Full-res only on expand** (lightbox).
+
+**Do not prerender the whole board** — it blows the byte/memory budget at 2237+.
+DOM `<img>` + this LOD chain is enough now; `<canvas>`/WebGL only becomes worth
+it at ~10k+ blocks or extreme zoom-out showing hundreds at once.
+
 ---
 
 ## 12. Milestones (build order)

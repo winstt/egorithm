@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "sync": "node scripts/sync.mjs",
     "publish:queue": "node scripts/publish.mjs",
-    "ingest:r2": "node --env-file=egorithm.env scripts/ingest-r2.mjs"
+    "ingest:r2": "node --env-file=egorithm.env scripts/ingest-r2.mjs",
+    "thumbs:r2": "node --env-file=egorithm.env scripts/thumbs-r2.mjs"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.1091.0",
